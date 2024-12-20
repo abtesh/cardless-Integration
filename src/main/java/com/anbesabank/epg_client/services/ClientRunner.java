@@ -15,30 +15,56 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.CompletableFuture;
 
 @Component
 @RequiredArgsConstructor
-public class ClientRunner implements CommandLineRunner {
+public class ClientRunner{
 
     private static final Logger logger = LoggerFactory.getLogger(ClientRunner.class);
     private final TcpClientService tcpClientService;
 
-    @Override
-    public void run(String... args) throws Exception {
-        // Build the ISO 8583 message
-        IsoMessage isoMessage = createIsoMessage();
+//    @Override
+//    public void run(String... args) throws Exception {
+//        // Build the ISO 8583 message
+//        IsoMessage isoMessage = createIsoMessage();
+//
+//        // Send the binary message
+//        tcpClientService.sendBinaryMessage(isoMessage);
+//    }
+public CompletableFuture<String> sendIsoMessage(String amount, String accountNumber) throws IOException {
+    // Build the ISO 8583 message
+    IsoMessage isoMessage = createIsoMessage(amount, accountNumber);
 
-        // Send the binary message
-        tcpClientService.sendBinaryMessage(isoMessage);
-    }
+    // Return a CompletableFuture that handles the TCP communication asynchronously
+    return CompletableFuture.supplyAsync(() -> {
+        int status = tcpClientService.sendBinaryMessage(isoMessage);
+        if (status == 0) {
+            // If status is 0, the message was sent successfully
+            return "ISO message sent and response received successfully.";
+        } else {
+            // If status isn't 0, there was an issue sending the message
+            return "Failed to send ISO message.";
+        }
+    });
+}
 
-    private IsoMessage createIsoMessage() throws IOException {
+    private IsoMessage createIsoMessage(String amount, String accountNumber) throws IOException {
+        // Validate inputs
+        if (accountNumber == null || accountNumber.isBlank()) {
+            throw new IllegalArgumentException("Account number cannot be null or blank.");
+        }
+        if (amount == null || amount.isBlank()) {
+            throw new IllegalArgumentException("Amount cannot be null or blank.");
+        }
+
+        // Create the ISO message
         MessageFactory<IsoMessage> messageFactory = ConfigParser.createDefault();
         IsoMessage isoMessage = messageFactory.newMessage(0x0100);
 
-        // Set the message fields (example values)
+        // Set the message fields
         isoMessage.setValue(3, "520000", IsoType.NUMERIC, 6);
-        isoMessage.setValue(4, "000000020000", IsoType.NUMERIC, 12);
+        isoMessage.setValue(4, amount, IsoType.NUMERIC, 12);
         isoMessage.setValue(7, generateField7Value(), IsoType.NUMERIC, 10); // Field 7: Transmission Date & Time
         String field11Value = generateRandomNumber();
         isoMessage.setValue(11, field11Value, IsoType.NUMERIC, 6);
@@ -48,10 +74,13 @@ public class ClientRunner implements CommandLineRunner {
         isoMessage.setValue(42, "LIONMERCL232323", IsoType.ALPHA, 15);
         isoMessage.setValue(48, "361009351940189803709", IsoType.LLLVAR, 21);
         isoMessage.setValue(49, "230", IsoType.NUMERIC, 3);
-        isoMessage.setValue(102, "0013800310872732", IsoType.LLVAR, 19);
+        isoMessage.setValue(102, accountNumber, IsoType.LLVAR, 19);
 
         return isoMessage;
     }
+
+
+    //"0013800310872732"
 
     private String generateRandomNumber() {
         SecureRandom random = new SecureRandom();

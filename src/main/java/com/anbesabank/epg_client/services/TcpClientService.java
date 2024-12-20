@@ -57,7 +57,7 @@ public class TcpClientService {
         }
     }
 
-    public void sendBinaryMessage(IsoMessage isoMessage) {
+    public int sendBinaryMessage(IsoMessage isoMessage) {
         try {
             // 1. Get the entire ISO message data in binary format
             byte[] messageData = isoMessage.writeData();
@@ -94,8 +94,11 @@ public class TcpClientService {
                 String response = in.readLine();
                 logger.info("Received response: {}", response);
             }
+
+            return 0;
         } catch (IOException e) {
             logger.error("Error sending binary message", e);
+            return -1;
         }
     }
 
