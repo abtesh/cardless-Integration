@@ -59,35 +59,39 @@ public class TcpClientService {
 
     public int sendBinaryMessage(IsoMessage isoMessage) {
         try {
+            // Log the connection status before sending the message
+            logger.info("Socket connected: {}", clientSocket.isConnected());
+            logger.info("Socket closed: {}", clientSocket.isClosed());
+
             // 1. Get the entire ISO message data in binary format
             byte[] messageData = isoMessage.writeData();
 
             // 2. Define MTI in hexadecimal format as per requirement
             String mtiHex = "30313030";  // "0100" in hex
-            logger.info("MTI Hex: {}", mtiHex);  // Log MTI in hex format
+            logger.info("MTI Hex: {}", mtiHex);
 
             // 3. Extract the 32 bytes starting from the 5th byte (bytes 5-36) as ASCII
             byte[] first32Bytes = Arrays.copyOfRange(messageData, 4, 36);
             String first32BytesStr = new String(first32Bytes, StandardCharsets.US_ASCII);
-            logger.info("First 32 Bytes (ASCII Part): {}", first32BytesStr);  // Log ASCII part
+            logger.info("First 32 Bytes (ASCII Part): {}", first32BytesStr);
 
             // 4. Convert the remaining data (starting from byte 37 onward) to hex
             String remainingDataHex = bytesToHex(Arrays.copyOfRange(messageData, 36, messageData.length));
-            logger.info("Remaining Data (Converted to Hex): {}", remainingDataHex);  // Log hex part
+            logger.info("Remaining Data (Converted to Hex): {}", remainingDataHex);
 
             // 5. Combine MTI, ASCII part, and hex part to form the full message
             String fullMessage = mtiHex + first32BytesStr + remainingDataHex;
             byte[] messageBytes = hexStringToByteArray(fullMessage);
-            logger.info("Full Message: {}", fullMessage);  // Log the final message format
+            logger.info("Full Message: {}", fullMessage);
 
-            // Convert the final message string to ASCII bytes to send
-//            byte[] asciiMessageBytes = fullMessage.getBytes(StandardCharsets.US_ASCII);
-           // logger.info("ASCII Bytes :", asciiMessageBytes);
-
-            // Send the ASCII message
-           clientSocket.getOutputStream().write(messageBytes);
+            // Send the message
+            clientSocket.getOutputStream().write(messageBytes);
             clientSocket.getOutputStream().flush();
             logger.info("Binary message sent successfully.");
+
+            // Log the connection status again after sending the message
+            logger.info("Socket connected: {}", clientSocket.isConnected());
+            logger.info("Socket closed: {}", clientSocket.isClosed());
 
             // Optionally read response
             if (in != null) {
@@ -101,6 +105,7 @@ public class TcpClientService {
             return -1;
         }
     }
+
 
     // Helper method to convert a byte array to a hex string
     public String bytesToHex(byte[] bytes) {

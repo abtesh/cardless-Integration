@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: Cardless-Integration
+server:
+  address: 10.1.22.176
+  port: 8080
