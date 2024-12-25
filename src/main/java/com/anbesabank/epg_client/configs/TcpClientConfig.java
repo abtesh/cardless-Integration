@@ -1,23 +1,24 @@
 package com.anbesabank.epg_client.configs;
 
-import ch.qos.logback.core.joran.event.SaxEventRecorder;
-import com.anbesabank.epg_client.services.TcpClientService;
+
+import com.solab.iso8583.IsoMessage;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+
 
 @Configuration
 @RequiredArgsConstructor
 public class TcpClientConfig {
     private static final Logger logger = LoggerFactory.getLogger(TcpClientConfig.class);
+    IsoMessage isoMessage;
+
     @Bean
     public Socket clientSocket() throws IOException {
         Socket socket = new Socket("192.168.20.5", 9234); // Server IP and Port
@@ -35,7 +36,7 @@ public class TcpClientConfig {
         return socket;
     }
 
-//    private void handleClient(Socket clientSocket) {
+    //    private void handleClient(Socket clientSocket) {
 //        try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), StandardCharsets.US_ASCII))) {
 //
 //            String response;
@@ -51,24 +52,24 @@ public class TcpClientConfig {
 //            e.printStackTrace();
 //        }
 //    }
-private void handleClient(Socket clientSocket) {
-    try (InputStream in = clientSocket.getInputStream()) {
-        byte[] buffer = new byte[1024];
-        int bytesRead;
+    private void handleClient(Socket clientSocket) {
+        try (InputStream in = clientSocket.getInputStream()) {
+            byte[] buffer = new byte[1024];
+            int bytesRead;
 
-        while ((bytesRead = in.read(buffer)) != -1) {
-            byte[] rawData = Arrays.copyOf(buffer, bytesRead);
-            String hexData = bytesToHex(rawData);
+            while ((bytesRead = in.read(buffer)) != -1) {
+                byte[] rawData = Arrays.copyOf(buffer, bytesRead);
+                String hexData = bytesToHex(rawData);
+                System.out.println("hex data: " + hexData);
+                // Process the response
+                String processedResponse = processResponse(hexData);
 
-            // Process the response
-            String processedResponse = processResponse(hexData);
-
-            System.out.println("Processed Response: " + processedResponse);
+                System.out.println("Processed Response: " + processedResponse);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-    } catch (IOException e) {
-        e.printStackTrace();
     }
-}
 
     private String processResponse(String hexResponse) {
         try {
@@ -79,10 +80,10 @@ private void handleClient(Socket clientSocket) {
 
             // Convert MTI to ASCII
             String mti = hexToAscii(mtiHex);
-
             // Convert remaining data to ASCII
             String isoMessageData = hexToAscii(remainingHex);
-
+            String allAscii = mti + asciiPart + isoMessageData;
+            System.out.println("All Ascii: " + allAscii);
             // Combine results
             return String.format("MTI: %s, ASCII Part: %s, ISO 8583 Data: %s", mti, asciiPart, isoMessageData);
         } catch (Exception e) {
