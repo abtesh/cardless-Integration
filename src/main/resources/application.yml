@@ -1,6 +1,10 @@
 spring:
   application:
     name: Cardless-Integration
+  activemq:
+    broker-url: tcp://localhost:61616
+    user: admin
+    password: admin
 server:
   address: 10.1.22.176
   port: 8080
