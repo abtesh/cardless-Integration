@@ -2,12 +2,15 @@ package com.anbesabank.epg_client.configs;
 
 
 import com.anbesabank.epg_client.DTO.FieldSpec;
-import com.solab.iso8583.IsoMessage;
+import com.anbesabank.epg_client.configs.MessageSender;
+import jakarta.jms.ConnectionFactory;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jms.core.JmsTemplate;
+
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
@@ -20,7 +23,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class TcpClientConfig {
     private static final Logger logger = LoggerFactory.getLogger(TcpClientConfig.class);
-    IsoMessage isoMessage;
+    private final ConnectionFactory connectionFactory;
+
 
     @Bean
     public Socket clientSocket() throws IOException {
@@ -39,22 +43,6 @@ public class TcpClientConfig {
         return socket;
     }
 
-    //    private void handleClient(Socket clientSocket) {
-//        try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), StandardCharsets.US_ASCII))) {
-//
-//            String response;
-//            while ((response = in.readLine()) != null) {
-//                // Log the raw response
-//                System.out.println("Raw Response: " + response);
-//
-//                // Parse the response to match the structure
-//                String parsedResponse = parseResponse(response);
-//                System.out.println("Parsed Response: " + parsedResponse);
-//            }
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//    }
     private void handleClient(Socket clientSocket) {
         try (InputStream in = clientSocket.getInputStream()) {
             byte[] buffer = new byte[1024];
@@ -118,7 +106,10 @@ public class TcpClientConfig {
                     System.out.println("Field " + key + ": " + value);
                     // Check if the field is 34
                     if (key == 34) {
-                        System.out.println("Field 34: " + value); // Log Field 34 specifically
+                        System.out.println("Field 34: " + value);// Log Field 34 specifically
+                        MessageSender messageSender = new MessageSender(new JmsTemplate(connectionFactory));
+                        messageSender.sendMessage("Field34Queue", value);
+
                     }
                 });
 
@@ -173,19 +164,4 @@ public class TcpClientConfig {
         }
         return fieldValues;
     }
-
-//    // Helper class to define field specifications
-//    static class FieldSpec {
-//        String type;
-//        int length;
-//
-//        FieldSpec(String type, int length) {
-//            this.type = type;
-//            this.length = length;
-//        }
-//
-//        FieldSpec(String type) {
-//            this.type = type;
-//        }
-//    }
 }
