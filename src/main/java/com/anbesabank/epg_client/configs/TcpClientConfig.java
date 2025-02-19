@@ -7,6 +7,7 @@ import jakarta.jms.ConnectionFactory;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jms.core.JmsTemplate;
@@ -22,13 +23,17 @@ import java.util.Map;
 @Configuration
 @RequiredArgsConstructor
 public class TcpClientConfig {
+    @Value("${tcp.server.ip}")
+    private String tcpServerIp;
+    @Value("${tcp.server.port}")
+    private int tcpServerPort;
     private static final Logger logger = LoggerFactory.getLogger(TcpClientConfig.class);
     private final ConnectionFactory connectionFactory;
 
 
     @Bean
     public Socket clientSocket() throws IOException {
-        Socket socket = new Socket("192.168.20.5", 9234); // Server IP and Port
+        Socket socket = new Socket(tcpServerIp, tcpServerPort); // Server IP and Port
         // Enable TCP keep-alive
         try {
             socket.setKeepAlive(true);

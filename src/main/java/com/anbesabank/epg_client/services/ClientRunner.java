@@ -74,7 +74,7 @@ public CompletableFuture<String> sendIsoMessage(String amount, String accountNum
         isoMessage.setValue(42, "LIONMERCL232323", IsoType.ALPHA, 15);
         isoMessage.setValue(48, "361009351940189803709", IsoType.LLLVAR, 21);
         isoMessage.setValue(49, "230", IsoType.NUMERIC, 3);
-        isoMessage.setValue(102, accountNumber, IsoType.LLVAR, 19);
+        isoMessage.setValue(102, "00138".concat(accountNumber), IsoType.LLVAR, 19);
 
         return isoMessage;
     }

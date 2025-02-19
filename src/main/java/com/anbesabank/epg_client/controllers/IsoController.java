@@ -23,8 +23,15 @@ public class IsoController {
     @PostMapping("/send")
     public ResponseEntity<String> sendIsoMessage(@Valid @RequestBody IsoRequest request) {
         try {
+            // Validate inputs
+            if (request.getAccountNumber() == null || request.getAmount() == null) {
+                throw new IllegalArgumentException("Account number and amount must be provided.");
+            }
             // Use CompletableFuture to handle async task and respond immediately
-            CompletableFuture<String> responseFuture = clientRunner.sendIsoMessage(request.getAmount(), request.getAccountNumber());
+            CompletableFuture<String> responseFuture = clientRunner.sendIsoMessage(
+                    request.getAmount(),
+                    request.getAccountNumber()
+            );
 
             // Return HTTP accepted response while processing happens asynchronously
             return ResponseEntity.accepted().body("Request is being processed. You will get the result shortly.");
